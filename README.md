@@ -17,28 +17,36 @@ Dependências apontam sempre **para dentro** (domínio não conhece infra):
 
 ```
 src/
-├─ core/               Regras — NÃO conhece Express nem Prisma
-│  ├─ types.ts         User, RefreshToken, PublicUser
-│  ├─ errors.ts        AppError + erros de negócio (com statusCode)
-│  ├─ ports.ts         Interfaces: UserRepository, RefreshTokenRepository,
-│  │                   HashProvider, TokenProvider
-│  └─ auth-service.ts  AuthService: register / login / refresh / logout
-├─ infra/              ADAPTERS — implementam os ports
-│  ├─ prisma.ts        PrismaClient + adapter SQLite
-│  ├─ repositories.ts  Prisma{User,RefreshToken}Repository
-│  └─ providers.ts     BcryptHashProvider, JwtTokenProvider
-├─ http/               Camada web (Express)
-│  ├─ app.ts           createApp + rotas
-│  ├─ auth-controller.ts
-│  ├─ middlewares.ts   ensureAuthenticated, validateBody, errorHandler
-│  └─ schemas.ts       validação Zod
-├─ config.ts           Env validado (fail-fast)
-└─ index.ts            Composition Root (injeção de dependências manual)
+├─ domain/                 Regras/contratos — NÃO conhece Express nem Prisma
+│  ├─ entities/            user.ts · task.ts · refresh-token.ts
+│  └─ ports/               repositories.ts · providers.ts (interfaces)
+├─ application/            Casos de uso
+│  ├─ auth-service.ts      register / login / refresh / logout
+│  └─ tasks-service.ts     CRUD de tarefas (com verificação de dono)
+├─ infra/                  ADAPTERS — implementam os ports
+│  ├─ prisma.ts            PrismaClient + adapter SQLite
+│  ├─ repositories/        prisma-{user,refresh-token,tasks}-repository.ts
+│  └─ providers/           bcrypt-hash-provider.ts · jwt-token-provider.ts
+├─ http/                   Camada web (Express)
+│  ├─ app.ts               createApp(routers) — não conhece services
+│  ├─ controllers/         auth-controller.ts · tasks-controller.ts
+│  ├─ middlewares/         ensure-authenticated · validate-body · error-handler
+│  ├─ routes/              auth.routes.ts · tasks.routes.ts
+│  └─ schemas/             auth-schemas.ts · task-schemas.ts (Zod)
+├─ errors.ts               AppError genérico (statusCode + message)
+├─ config.ts               Env validado (fail-fast)
+├─ container.ts            Composition Root (monta o grafo de dependências)
+└─ index.ts                Bootstrap (app.listen)
 ```
 
-**Regra de dependência:** `http/` e `infra/` dependem de `core/`; `core/` não
-depende de ninguém. Trocar SQLite por Postgres, ou bcrypt por argon2, altera
-apenas a classe em `infra/` + a linha no `index.ts` — o `core/` não muda.
+**Regra de dependência:** `http/` e `infra/` dependem de `domain/`; o domínio
+não depende de ninguém. Trocar SQLite por Postgres, ou bcrypt por argon2, altera
+apenas a classe em `infra/` + a linha no `container.ts` — domínio/aplicação não mudam.
+
+**Desacoplamento do app:** cada feature expõe um _router_ (`http/routes/*`). O
+`container.ts` instancia as dependências e monta os routers; o `createApp(routers)`
+só recebe routers prontos. Adicionar uma feature = criar seus arquivos e registrar
+o router no `container.ts` — a assinatura do `createApp` nunca muda.
 
 ## Setup
 
@@ -71,6 +79,10 @@ npm run dev                 # sobe em http://localhost:3000 (watch)
 | POST   | `/auth/refresh`  | —      | `{ refreshToken }`        | `200 { accessToken, refreshToken }`       |
 | POST   | `/auth/logout`   | —      | `{ refreshToken }`        | `204`                                     |
 | GET    | `/auth/me`       | Bearer | —                         | `200 { user }`                            |
+| GET    | `/tasks`         | Bearer | —                         | `200 { tasks }`                           |
+| POST   | `/tasks`         | Bearer | `{ title, description? }` | `201 { task }`                            |
+| PUT    | `/tasks/:id`     | Bearer | `{ title?, description?, completed? }` | `200 { task }`               |
+| DELETE | `/tasks/:id`     | Bearer | —                         | `204`                                     |
 | GET    | `/health`        | —      | —                         | `200 { status: "ok" }`                    |
 
 Exemplo:
@@ -107,12 +119,22 @@ curl localhost:3000/auth/me -H "Authorization: Bearer <accessToken>"
 - Mensagem de login genérica ("E-mail ou senha inválidos") — não revela e-mails cadastrados.
 - `JWT_ACCESS_SECRET` fica no `.env` (fora do git). Use um segredo forte e único por ambiente.
 
-## Próximos passos (tarefas)
+## Tarefas
 
-Ao criar as rotas de tarefas, proteja-as com o middleware existente e use
-`req.userId` como dono da tarefa:
+Todas as rotas de `/tasks` exigem `Authorization: Bearer <accessToken>`. Cada
+tarefa pertence ao usuário autenticado (`req.userId`); operar numa tarefa de
+outro usuário retorna **404** (proteção contra IDOR, feita no `TasksService`).
 
-```ts
-router.use(ensureAuthenticated(tokenProvider));
-router.post("/tasks", createTaskController); // dono = req.userId
+```bash
+# criar tarefa
+curl -X POST localhost:3000/tasks \
+  -H "Authorization: Bearer <accessToken>" \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"Comprar pão","description":"na padaria"}'
+
+# concluir tarefa
+curl -X PUT localhost:3000/tasks/<id> \
+  -H "Authorization: Bearer <accessToken>" \
+  -H 'Content-Type: application/json' \
+  -d '{"completed":true}'
 ```

@@ -1,10 +1,9 @@
 import type {
   UserRepository,
   RefreshTokenRepository,
-  HashProvider,
-  TokenProvider,
-} from "../domain/ports.ts";
-import { toPublicUser, type PublicUser } from "../domain/entities.ts";
+} from "../domain/ports/repositories.ts";
+import type { HashProvider, TokenProvider } from "../domain/ports/providers.ts";
+import { toPublicUser, type PublicUser } from "../domain/entities/user.ts";
 import { AppError } from "../errors.ts";
 
 export interface AuthTokens {
@@ -15,6 +14,10 @@ export interface Session extends AuthTokens {
   user: PublicUser;
 }
 
+/**
+ * Regras de autenticação. Depende apenas dos ports (não conhece Express nem
+ * Prisma), então é totalmente testável.
+ */
 export class AuthService {
   constructor(
     private readonly users: UserRepository,
@@ -22,7 +25,7 @@ export class AuthService {
     private readonly hash: HashProvider,
     private readonly tokens: TokenProvider,
     private readonly refreshTtlDays: number,
-  ) { }
+  ) {}
 
   async register(email: string, password: string): Promise<PublicUser> {
     const normalized = email.trim().toLowerCase();
@@ -38,6 +41,7 @@ export class AuthService {
 
   async login(email: string, password: string): Promise<Session> {
     const user = await this.users.findByEmail(email.trim().toLowerCase());
+    // Mesma resposta para "não existe" e "senha errada": não vaza e-mails.
     if (!user || !(await this.hash.compare(password, user.password))) {
       throw new AppError(401, "E-mail ou senha inválidos.");
     }
@@ -51,7 +55,7 @@ export class AuthService {
     if (!stored || stored.revokedAt || stored.expiresAt.getTime() <= Date.now()) {
       throw new AppError(401, "Sessão inválida ou expirada. Faça login novamente.");
     }
-    // Rotação de tokens: o refresh usado é revogado e um novo é emitido
+    // Rotação: o refresh usado é revogado e um novo par é emitido.
     await this.refreshTokens.revoke(stored.id);
     return this.issueTokens(stored.userId);
   }

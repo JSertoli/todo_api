@@ -31,3 +31,6 @@ yarn-error.log*
 /generated/
 *.db
 *.db-journal
+
+# configurações do Bruno pra consumir os endpoints da API
+bruno/*

@@ -1,20 +1,10 @@
-// Entidades do domínio 
-
 export interface User {
   id: string;
   email: string;
+  /** Senha Hasheada bcrypt o texto puro nunca chega aqui. */
   password: string;
   createdAt: Date;
   updatedAt: Date;
-}
-
-export interface RefreshToken {
-  id: string;
-  tokenHash: string;
-  userId: string;
-  expiresAt: Date;
-  revokedAt: Date | null;
-  createdAt: Date;
 }
 
 export type PublicUser = Pick<User, "id" | "email" | "createdAt">;

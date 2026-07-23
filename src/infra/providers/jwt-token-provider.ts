@@ -1,19 +1,7 @@
-import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { randomBytes, createHash } from "node:crypto";
-import type { HashProvider, TokenProvider } from "../domain/ports.ts";
-import { AppError } from "../errors.ts";
-
-const SALT_ROUNDS = 12;
-
-export class BcryptHashProvider implements HashProvider {
-  hash(plain: string): Promise<string> {
-    return bcrypt.hash(plain, SALT_ROUNDS);
-  }
-  compare(plain: string, hashed: string): Promise<boolean> {
-    return bcrypt.compare(plain, hashed);
-  }
-}
+import type { TokenProvider } from "../../domain/ports/providers.ts";
+import { AppError } from "../../errors.ts";
 
 export class JwtTokenProvider implements TokenProvider {
   constructor(

@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-// Validação de formato do body das requisições
-
 export const registerSchema = z.object({
   email: z.email("E-mail inválido."),
   password: z

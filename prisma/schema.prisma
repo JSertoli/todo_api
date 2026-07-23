@@ -1,7 +1,3 @@
-// Prisma 7 — client novo (query compiler) + driver adapter (better-sqlite3).
-// A URL do banco NÃO fica aqui: é injetada em prisma.config.ts a partir do .env.
-// Docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -13,13 +9,13 @@ datasource db {
 
 /// Usuário da aplicação. `password` guarda SEMPRE o hash bcrypt, nunca o texto puro.
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   refreshTokens RefreshToken[]
+  tasks         Task[]
 
   @@map("users")
 }
@@ -30,11 +26,25 @@ model RefreshToken {
   id        String    @id @default(uuid())
   tokenHash String    @unique
   userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   revokedAt DateTime?
   createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("refresh_tokens")
+}
+
+model Task {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  completed   Boolean  @default(false)
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("tasks")
 }
