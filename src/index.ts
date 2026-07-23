@@ -1,11 +1,29 @@
-import express from 'express'
+import { env } from "./config.ts";
+import { prisma } from "./infra/prisma.ts";
+import {
+  PrismaUserRepository,
+  PrismaRefreshTokenRepository,
+} from "./infra/repositories.ts";
+import { BcryptHashProvider, JwtTokenProvider } from "./infra/providers.ts";
+import { AuthService } from "./application/auth-service.ts";
+import { createApp } from "./http/app.ts";
 
-const app = express()
 
-app.get('/', (req, res) => {
-  res.send('Hello World')
-})
+const tokenProvider = new JwtTokenProvider(
+  env.JWT_ACCESS_SECRET,
+  env.JWT_ACCESS_EXPIRES_IN,
+);
 
-app.listen(3000, () => {
-  console.log('Server is running on http://localhost:3000')
-})
+const authService = new AuthService(
+  new PrismaUserRepository(prisma),
+  new PrismaRefreshTokenRepository(prisma),
+  new BcryptHashProvider(),
+  tokenProvider,
+  env.REFRESH_TOKEN_EXPIRES_DAYS,
+);
+
+const app = createApp(authService, tokenProvider);
+
+app.listen(env.PORT, () => {
+  console.log(`API rodando em http://localhost:${env.PORT}`);
+});

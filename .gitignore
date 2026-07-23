@@ -26,3 +26,8 @@ yarn-error.log*
 
 # TypeScript
 *.tsbuildinfo
+
+# Prisma (client gerado) + banco SQLite local
+/generated/
+*.db
+*.db-journal
