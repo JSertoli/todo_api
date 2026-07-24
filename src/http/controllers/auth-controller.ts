@@ -5,7 +5,7 @@ export class AuthController {
   constructor(private readonly auth: AuthService) { }
 
   register = async (req: Request, res: Response): Promise<void> => {
-    const user = await this.auth.register(req.body.email, req.body.password);
+    const user = await this.auth.register(req.body.name, req.body.email, req.body.password);
     res.status(201).json({ user });
   };
 

@@ -97,7 +97,7 @@ npm run test:coverage # com relatório de cobertura (text + html em coverage/)
 
 | Método | Rota             | Auth   | Corpo                     | Sucesso                                   |
 | ------ | ---------------- | ------ | ------------------------- | ----------------------------------------- |
-| POST   | `/auth/register` | —      | `{ email, password }`     | `201 { user }`                            |
+| POST   | `/auth/register` | —      | `{ name, email, password }` | `201 { user }`                          |
 | POST   | `/auth/login`    | —      | `{ email, password }`     | `200 { user, accessToken, refreshToken }` |
 | POST   | `/auth/refresh`  | —      | `{ refreshToken }`        | `200 { accessToken, refreshToken }`       |
 | POST   | `/auth/logout`   | —      | `{ refreshToken }`        | `204`                                     |
@@ -114,7 +114,7 @@ Exemplo:
 # registrar
 curl -X POST localhost:3000/auth/register \
   -H 'Content-Type: application/json' \
-  -d '{"email":"joao@ex.com","password":"senhaSegura123"}'
+  -d '{"name":"Joao Sertoli","email":"joao@ex.com","password":"senhaSegura123"}'
 
 # login (guarde accessToken e refreshToken)
 curl -X POST localhost:3000/auth/login \

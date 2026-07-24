@@ -19,9 +19,10 @@ class InMemoryUserRepository implements UserRepository {
     return this.users.find((u) => u.id === id) ?? null;
   }
 
-  async create(data: { email: string; password: string }): Promise<User> {
+  async create(data: { email: string; password: string; name: string }): Promise<User> {
     const user: User = {
       id: crypto.randomUUID(),
+      name: data.name,
       email: data.email,
       password: data.password,
       createdAt: new Date(),
@@ -102,9 +103,14 @@ describe("AuthService", () => {
   });
 
   describe("register", () => {
-    it("cria um usuário com e-mail normalizado (trim + lowercase) e senha hasheada", async () => {
-      const result = await service.register("  Joao@Example.COM  ", "senhaSegura123");
+    it("cria um usuário com nome, e-mail normalizado (trim + lowercase) e senha hasheada", async () => {
+      const result = await service.register(
+        "Joao Sertoli",
+        "  Joao@Example.COM  ",
+        "senhaSegura123",
+      );
 
+      expect(result.name).toBe("Joao Sertoli");
       expect(result.email).toBe("joao@example.com");
       expect(result).not.toHaveProperty("password");
 
@@ -112,18 +118,28 @@ describe("AuthService", () => {
       expect(stored?.password).toBe("hashed:senhaSegura123");
     });
 
+    it("remove espaços em volta do nome (trim)", async () => {
+      const result = await service.register(
+        "  Joao Sertoli  ",
+        "joao@example.com",
+        "senhaSegura123",
+      );
+
+      expect(result.name).toBe("Joao Sertoli");
+    });
+
     it("rejeita registro com e-mail já cadastrado, mesmo com capitalização/espaços diferentes", async () => {
-      await service.register("joao@example.com", "senhaSegura123");
+      await service.register("Joao Sertoli", "joao@example.com", "senhaSegura123");
 
       await expect(
-        service.register("  JOAO@EXAMPLE.COM  ", "outraSenha123"),
+        service.register("Outro Nome", "  JOAO@EXAMPLE.COM  ", "outraSenha123"),
       ).rejects.toMatchObject({ statusCode: 409 });
     });
   });
 
   describe("login", () => {
     it("autentica com credenciais corretas e emite access + refresh token", async () => {
-      const created = await service.register("joao@example.com", "senhaSegura123");
+      const created = await service.register("Joao Sertoli", "joao@example.com", "senhaSegura123");
 
       const session = await service.login("joao@example.com", "senhaSegura123");
 
@@ -133,7 +149,7 @@ describe("AuthService", () => {
     });
 
     it("normaliza o e-mail (trim + lowercase) ao autenticar", async () => {
-      await service.register("joao@example.com", "senhaSegura123");
+      await service.register("Joao Sertoli", "joao@example.com", "senhaSegura123");
 
       const session = await service.login("  JOAO@Example.com  ", "senhaSegura123");
 
@@ -147,7 +163,7 @@ describe("AuthService", () => {
     });
 
     it("rejeita login com senha incorreta", async () => {
-      await service.register("joao@example.com", "senhaSegura123");
+      await service.register("Joao Sertoli", "joao@example.com", "senhaSegura123");
 
       await expect(
         service.login("joao@example.com", "senhaErrada"),
@@ -155,7 +171,7 @@ describe("AuthService", () => {
     });
 
     it("persiste o refresh token apenas com o hash (nunca o valor puro)", async () => {
-      await service.register("joao@example.com", "senhaSegura123");
+      await service.register("Joao Sertoli", "joao@example.com", "senhaSegura123");
 
       const session = await service.login("joao@example.com", "senhaSegura123");
 
@@ -169,7 +185,7 @@ describe("AuthService", () => {
 
   describe("refresh", () => {
     it("emite um novo par de tokens e revoga (rotaciona) o refresh usado", async () => {
-      await service.register("joao@example.com", "senhaSegura123");
+      await service.register("Joao Sertoli", "joao@example.com", "senhaSegura123");
       const session = await service.login("joao@example.com", "senhaSegura123");
 
       const renewed = await service.refresh(session.refreshToken);
@@ -190,7 +206,7 @@ describe("AuthService", () => {
     });
 
     it("rejeita reuso do refresh token antigo após a rotação", async () => {
-      await service.register("joao@example.com", "senhaSegura123");
+      await service.register("Joao Sertoli", "joao@example.com", "senhaSegura123");
       const session = await service.login("joao@example.com", "senhaSegura123");
       await service.refresh(session.refreshToken);
 
@@ -200,7 +216,7 @@ describe("AuthService", () => {
     });
 
     it("rejeita um refresh token expirado", async () => {
-      await service.register("joao@example.com", "senhaSegura123");
+      await service.register("Joao Sertoli", "joao@example.com", "senhaSegura123");
       const session = await service.login("joao@example.com", "senhaSegura123");
 
       const stored = await refreshTokens.findByHash(
@@ -214,7 +230,7 @@ describe("AuthService", () => {
     });
 
     it("o novo refresh token emitido continua funcionando normalmente", async () => {
-      await service.register("joao@example.com", "senhaSegura123");
+      await service.register("Joao Sertoli", "joao@example.com", "senhaSegura123");
       const session = await service.login("joao@example.com", "senhaSegura123");
 
       const renewed = await service.refresh(session.refreshToken);
@@ -226,7 +242,7 @@ describe("AuthService", () => {
 
   describe("logout", () => {
     it("revoga o refresh token informado", async () => {
-      await service.register("joao@example.com", "senhaSegura123");
+      await service.register("Joao Sertoli", "joao@example.com", "senhaSegura123");
       const session = await service.login("joao@example.com", "senhaSegura123");
 
       await service.logout(session.refreshToken);
@@ -238,7 +254,7 @@ describe("AuthService", () => {
     });
 
     it("depois do logout, o refresh token não pode mais ser usado", async () => {
-      await service.register("joao@example.com", "senhaSegura123");
+      await service.register("Joao Sertoli", "joao@example.com", "senhaSegura123");
       const session = await service.login("joao@example.com", "senhaSegura123");
       await service.logout(session.refreshToken);
 
@@ -252,7 +268,7 @@ describe("AuthService", () => {
     });
 
     it("é idempotente: token já revogado não lança erro", async () => {
-      await service.register("joao@example.com", "senhaSegura123");
+      await service.register("Joao Sertoli", "joao@example.com", "senhaSegura123");
       const session = await service.login("joao@example.com", "senhaSegura123");
       await service.logout(session.refreshToken);
 
@@ -262,7 +278,7 @@ describe("AuthService", () => {
 
   describe("getProfile", () => {
     it("retorna os dados públicos do usuário autenticado", async () => {
-      const created = await service.register("joao@example.com", "senhaSegura123");
+      const created = await service.register("Joao Sertoli", "joao@example.com", "senhaSegura123");
 
       const profile = await service.getProfile(created.id);
 

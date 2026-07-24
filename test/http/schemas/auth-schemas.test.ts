@@ -6,8 +6,53 @@ import {
 } from "../../../src/http/schemas/auth-schemas.ts";
 
 describe("registerSchema", () => {
-  it("aceita e-mail e senha válidos", () => {
+  it("aceita nome, e-mail e senha válidos", () => {
     const result = registerSchema.safeParse({
+      name: "Joao Sertoli",
+      email: "joao@example.com",
+      password: "senhaSegura123",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejeita corpo sem nome", () => {
+    const result = registerSchema.safeParse({
+      email: "joao@example.com",
+      password: "senhaSegura123",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejeita nome com menos de 2 caracteres", () => {
+    const result = registerSchema.safeParse({
+      name: "J",
+      email: "joao@example.com",
+      password: "senhaSegura123",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("aceita nome de exatamente 2 caracteres (limite)", () => {
+    const result = registerSchema.safeParse({
+      name: "Jo",
+      email: "joao@example.com",
+      password: "senhaSegura123",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejeita nome com mais de 100 caracteres", () => {
+    const result = registerSchema.safeParse({
+      name: "a".repeat(101),
+      email: "joao@example.com",
+      password: "senhaSegura123",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("aceita nome de exatamente 100 caracteres (limite)", () => {
+    const result = registerSchema.safeParse({
+      name: "a".repeat(100),
       email: "joao@example.com",
       password: "senhaSegura123",
     });
@@ -16,6 +61,7 @@ describe("registerSchema", () => {
 
   it("rejeita e-mail em formato inválido", () => {
     const result = registerSchema.safeParse({
+      name: "Joao Sertoli",
       email: "nao-e-email",
       password: "senhaSegura123",
     });
@@ -24,6 +70,7 @@ describe("registerSchema", () => {
 
   it("rejeita senha com menos de 8 caracteres", () => {
     const result = registerSchema.safeParse({
+      name: "Joao Sertoli",
       email: "joao@example.com",
       password: "1234567",
     });
@@ -32,6 +79,7 @@ describe("registerSchema", () => {
 
   it("rejeita senha com mais de 72 caracteres (limite do bcrypt)", () => {
     const result = registerSchema.safeParse({
+      name: "Joao Sertoli",
       email: "joao@example.com",
       password: "a".repeat(73),
     });
@@ -40,6 +88,7 @@ describe("registerSchema", () => {
 
   it("aceita senha de exatamente 72 caracteres (limite)", () => {
     const result = registerSchema.safeParse({
+      name: "Joao Sertoli",
       email: "joao@example.com",
       password: "a".repeat(72),
     });

@@ -24,24 +24,33 @@ function createAuthService(overrides: Partial<AuthService> = {}): AuthService {
 
 describe("AuthController", () => {
   it("register: delega ao AuthService e responde 201 com o usuário criado", async () => {
-    const user = { id: "1", email: "joao@example.com", createdAt: new Date() };
+    const user = {
+      id: "1",
+      name: "Joao Sertoli",
+      email: "joao@example.com",
+      createdAt: new Date(),
+    };
     const auth = createAuthService({ register: vi.fn().mockResolvedValue(user) });
     const controller = new AuthController(auth);
     const req = {
-      body: { email: "joao@example.com", password: "senhaSegura123" },
+      body: { name: "Joao Sertoli", email: "joao@example.com", password: "senhaSegura123" },
     } as Request;
     const res = createRes();
 
     await controller.register(req, res);
 
-    expect(auth.register).toHaveBeenCalledWith("joao@example.com", "senhaSegura123");
+    expect(auth.register).toHaveBeenCalledWith(
+      "Joao Sertoli",
+      "joao@example.com",
+      "senhaSegura123",
+    );
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith({ user });
   });
 
   it("login: delega ao AuthService e responde com a sessão (user + tokens)", async () => {
     const session = {
-      user: { id: "1", email: "a@b.com", createdAt: new Date() },
+      user: { id: "1", name: "Joao Sertoli", email: "a@b.com", createdAt: new Date() },
       accessToken: "access",
       refreshToken: "refresh",
     };
@@ -83,7 +92,12 @@ describe("AuthController", () => {
   });
 
   it("me: usa req.userId (injetado pelo authGuard) e responde com o perfil", async () => {
-    const profile = { id: "1", email: "joao@example.com", createdAt: new Date() };
+    const profile = {
+      id: "1",
+      name: "Joao Sertoli",
+      email: "joao@example.com",
+      createdAt: new Date(),
+    };
     const auth = createAuthService({ getProfile: vi.fn().mockResolvedValue(profile) });
     const controller = new AuthController(auth);
     const req = { userId: "1" } as Request;

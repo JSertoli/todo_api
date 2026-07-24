@@ -3,9 +3,10 @@ import { toPublicUser } from "../../../src/domain/entities/user.ts";
 import type { User } from "../../../src/domain/entities/user.ts";
 
 describe("toPublicUser", () => {
-  it("mantém apenas id, email e createdAt (remove password e updatedAt)", () => {
+  it("mantém id, name, email e createdAt (remove password e updatedAt)", () => {
     const user: User = {
       id: "1",
+      name: "Joao Sertoli",
       email: "joao@example.com",
       password: "hash-secreto",
       createdAt: new Date("2026-01-01T00:00:00Z"),
@@ -16,6 +17,7 @@ describe("toPublicUser", () => {
 
     expect(publicUser).toEqual({
       id: "1",
+      name: "Joao Sertoli",
       email: "joao@example.com",
       createdAt: user.createdAt,
     });

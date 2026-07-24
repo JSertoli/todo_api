@@ -27,12 +27,13 @@ export class AuthService {
     private readonly refreshTtlDays: number,
   ) {}
 
-  async register(email: string, password: string): Promise<PublicUser> {
+  async register(name: string, email: string, password: string): Promise<PublicUser> {
     const normalized = email.trim().toLowerCase();
     if (await this.users.findByEmail(normalized)) {
       throw new AppError(409, "Já existe uma conta com este e-mail.");
     }
     const user = await this.users.create({
+      name: name.trim(),
       email: normalized,
       password: await this.hash.hash(password),
     });
