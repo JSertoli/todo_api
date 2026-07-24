@@ -69,6 +69,29 @@ npm run dev                 # sobe em http://localhost:3000 (watch)
 | `npm run typecheck`       | Checagem de tipos (tsc --noEmit)           |
 | `npm run prisma:migrate`  | `prisma migrate dev`                       |
 | `npm run prisma:studio`   | Abre o Prisma Studio                       |
+| `npm test`                | Roda a suíte de testes (Vitest)            |
+| `npm run test:watch`      | Testes em modo watch                       |
+| `npm run test:coverage`   | Testes + relatório de cobertura            |
+
+## Testes
+
+Testes unitários com **Vitest**, em `test/`, espelhando a arquitetura de `src/`.
+Cobertura atual: **módulo de autenticação** (`auth-service`, providers, middlewares,
+controller, schemas) — ~100% linhas, ~97% branches.
+
+- `AuthService` é testado com **fakes em memória** dos ports (`UserRepository`,
+  `RefreshTokenRepository`, `HashProvider`, `TokenProvider`) — rápido e
+  determinístico, sem tocar banco/bcrypt/jwt reais.
+- `JwtTokenProvider` e `BcryptHashProvider` são testados com as libs **reais**
+  (jsonwebtoken/bcrypt), validando comportamento de assinatura, expiração e hash.
+- Repositórios Prisma e o módulo de tarefas ainda não têm testes automatizados
+  (validados até aqui via os scripts e2e/Bruno) — próximo passo natural seria
+  um teste de integração contra SQLite real.
+
+```bash
+npm test              # roda tudo uma vez
+npm run test:coverage # com relatório de cobertura (text + html em coverage/)
+```
 
 ## Endpoints
 

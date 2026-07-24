@@ -32,5 +32,8 @@ yarn-error.log*
 *.db
 *.db-journal
 
+# Relatório de cobertura de testes (Vitest)
+/coverage/
+
 # configurações do Bruno pra consumir os endpoints da API
 bruno/*
