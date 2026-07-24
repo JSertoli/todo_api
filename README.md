@@ -76,17 +76,17 @@ npm run dev                 # sobe em http://localhost:3000 (watch)
 ## Testes
 
 Testes unitários com **Vitest**, em `test/`, espelhando a arquitetura de `src/`.
-Cobertura atual: **módulo de autenticação** (`auth-service`, providers, middlewares,
-controller, schemas) — ~100% linhas, ~97% branches.
+Cobertura atual: **autenticação** e **tarefas** (services, providers, middlewares,
+controllers, schemas) — 86 testes, ~100% linhas, ~97% branches.
 
-- `AuthService` é testado com **fakes em memória** dos ports (`UserRepository`,
-  `RefreshTokenRepository`, `HashProvider`, `TokenProvider`) — rápido e
-  determinístico, sem tocar banco/bcrypt/jwt reais.
+- `AuthService` e `TasksService` são testados com **fakes em memória** dos ports
+  (`UserRepository`, `RefreshTokenRepository`, `TasksRepository`, `HashProvider`,
+  `TokenProvider`) — rápido e determinístico, sem tocar banco/bcrypt/jwt reais.
 - `JwtTokenProvider` e `BcryptHashProvider` são testados com as libs **reais**
   (jsonwebtoken/bcrypt), validando comportamento de assinatura, expiração e hash.
-- Repositórios Prisma e o módulo de tarefas ainda não têm testes automatizados
-  (validados até aqui via os scripts e2e/Bruno) — próximo passo natural seria
-  um teste de integração contra SQLite real.
+- `TasksService` tem cobertura dedicada da checagem de dono da tarefa(`ensureOwner`):
+  update/delete de tarefa de outro usuário retornam 404 — é o teste que trava
+  a proteção contra IDOR como regressão.
 
 ```bash
 npm test              # roda tudo uma vez
