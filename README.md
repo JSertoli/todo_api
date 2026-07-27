@@ -167,3 +167,11 @@ curl -X PUT localhost:3000/tasks/<id> \
   -H 'Content-Type: application/json' \
   -d '{"completed":true}'
 ```
+
+## Pontos de melhoria com mais tempo
+
+- Implementar um login federado, google, GitHub, etc
+- Adicionar a api em um contêiner para deixá-la portável
+- Melhorar a segurança da api para evitar ataques (CDN e firewall)
+- Adicionar cache na api para informações mais acessadas
+- Read replicas para não sobrecarregar o banco, possibilitando adicionar load balancers

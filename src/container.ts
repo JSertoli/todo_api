@@ -41,3 +41,5 @@ const routers = [
 ];
 
 export const app = createApp(routers);
+
+export { prisma };

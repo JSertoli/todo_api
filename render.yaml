@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: todo-api
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install
+    startCommand: npx prisma migrate deploy && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        value: file:./dev.db
+      - key: JWT_ACCESS_SECRET
+        sync: false 
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: "900"
+      - key: REFRESH_TOKEN_EXPIRES_DAYS
+        value: "7"
