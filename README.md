@@ -140,8 +140,14 @@ curl localhost:3000/auth/me -H "Authorization: Bearer <accessToken>"
 - Senha: **bcrypt** (12 rounds); o texto puro nunca é persistido/retornado.
 - Refresh token: guardado só como hash SHA-256; vazamento do banco não expõe sessões.
 - Mensagem de login genérica ("E-mail ou senha inválidos") — não revela e-mails cadastrados.
-- `JWT_ACCESS_SECRET` fica no `.env` (fora do git). Use um segredo forte e único por ambiente.
-
+- `JWT_ACCESS_SECRET` fica no `.env`.
+- **Rate limiting** (`express-rate-limit`, [rate-limit.ts](src/http/middlewares/rate-limit.ts)):
+  - Limite **geral**: 100 req/min por IP, aplicado a toda a API em `app.ts`
+    (antes até do parse do body, pra rejeitar flood sem gastar CPU).
+  - Limite **de auth**: 10 tentativas/15 min por IP, com **contador
+    independente por rota** em `/auth/register`, `/auth/login` e
+    `/auth/refresh` — mitiga brute force/credential stuffing sem deixar uma
+    rota bloqueada travar as outras.
 ## Tarefas
 
 Todas as rotas de `/tasks` exigem `Authorization: Bearer <accessToken>`. Cada

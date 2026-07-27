@@ -1,8 +1,11 @@
 import express, { type Express, type Router } from "express";
 import { errorHandler } from "./middlewares/error-handler.ts";
+import { globalRateLimiter } from "./middlewares/rate-limit.ts";
 
 export function createApp(routers: Router[]): Express {
   const app = express();
+
+  app.use(globalRateLimiter);
   app.use(express.json());
 
   app.get("/health", (_req, res) => {
