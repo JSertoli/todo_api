@@ -1,4 +1,4 @@
-import rateLimit from "express-rate-limit";
+import { rateLimit } from "express-rate-limit";
 import { AppError } from "../../errors.ts";
 
 function tooManyRequests(windowMs: number, limit: number, message: string) {
