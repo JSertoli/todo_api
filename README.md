@@ -1,15 +1,16 @@
 # todo_api — Autenticação (JWT + Prisma)
 
 API de registro/login para um app de tarefas, em **Clean Architecture** com
-Express 5, Prisma 7 (SQLite) e JWT (access + refresh token com rotação).
+Express 5, Prisma 7 (PostgreSQL via Neon) e JWT (access + refresh token com rotação).
 
 ## Stack
 
-- **Node 24** + **TypeScript** (ESM), executado com **tsx** (sem build)
+- **Node 22+** + **TypeScript** (ESM), executado com **tsx** (sem build)
 - **Express 5** — HTTP
-- **Prisma 7** + **SQLite** (driver adapter `better-sqlite3`)
+- **Prisma 7** + **PostgreSQL** (driver adapter `@prisma/adapter-pg`) hospedado no [Neon](https://neon.tech)
 - **jsonwebtoken** — access token (JWT) | **bcrypt** — hash de senha
 - **zod** — validação de entrada e das variáveis de ambiente
+- **express-rate-limit** — rate limiting (geral + estrito em rotas de auth)
 
 ## Arquitetura
 
@@ -24,24 +25,24 @@ src/
 │  ├─ auth-service.ts      register / login / refresh / logout
 │  └─ tasks-service.ts     CRUD de tarefas (com verificação de dono)
 ├─ infra/                  ADAPTERS — implementam os ports
-│  ├─ prisma.ts            PrismaClient + adapter SQLite
+│  ├─ prisma.ts            PrismaClient + adapter Postgres (@prisma/adapter-pg)
 │  ├─ repositories/        prisma-{user,refresh-token,tasks}-repository.ts
 │  └─ providers/           bcrypt-hash-provider.ts · jwt-token-provider.ts
 ├─ http/                   Camada web (Express)
 │  ├─ app.ts               createApp(routers) — não conhece services
 │  ├─ controllers/         auth-controller.ts · tasks-controller.ts
-│  ├─ middlewares/         ensure-authenticated · validate-body · error-handler
+│  ├─ middlewares/         ensure-authenticated · validate-body · error-handler · rate-limit
 │  ├─ routes/              auth.routes.ts · tasks.routes.ts
 │  └─ schemas/             auth-schemas.ts · task-schemas.ts (Zod)
 ├─ errors.ts               AppError genérico (statusCode + message)
 ├─ config.ts               Env validado (fail-fast)
 ├─ container.ts            Composition Root (monta o grafo de dependências)
-└─ index.ts                Bootstrap (app.listen)
+└─ index.ts                Bootstrap (app.listen + shutdown gracioso)
 ```
 
 **Regra de dependência:** `http/` e `infra/` dependem de `domain/`; o domínio
-não depende de ninguém. Trocar SQLite por Postgres, ou bcrypt por argon2, altera
-apenas a classe em `infra/` + a linha no `container.ts` — domínio/aplicação não mudam.
+não depende de ninguém. Trocar de banco, ou bcrypt por argon2, altera apenas
+a classe em `infra/` + a linha no `container.ts` — domínio/aplicação não mudam.
 
 **Desacoplamento do app:** cada feature expõe um _router_ (`http/routes/*`). O
 `container.ts` instancia as dependências e monta os routers; o `createApp(routers)`
@@ -52,8 +53,8 @@ o router no `container.ts` — a assinatura do `createApp` nunca muda.
 
 ```bash
 npm install                 # deps (postinstall roda prisma generate)
-cp .env.example .env        # e ajuste o JWT_ACCESS_SECRET
-npm run prisma:migrate      # cria o dev.db e aplica as migrations
+cp .env.example .env        # ajuste DATABASE_URL e JWT_ACCESS_SECRET
+npm run prisma:migrate      # aplica as migrations no banco
 npm run dev                 # sobe em http://localhost:3000 (watch)
 ```
 

@@ -10,7 +10,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        value: file:./dev.db
+        sync: false 
       - key: JWT_ACCESS_SECRET
         sync: false 
       - key: JWT_ACCESS_EXPIRES_IN
